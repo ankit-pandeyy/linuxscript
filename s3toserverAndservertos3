@@ -1,1 +1,28 @@
-=
+================================SERVER TO S3==========================
+#!/bin/bash
+ip=`/sbin/ifconfig | grep "inet"| head -n 1| cut -d: -f2 | awk {'print $2'}`
+cd /usr/local/S3
+a=`(echo ls -lrt | sshpass -p PASSWORD sftp -oPort=33000 USERNAME@IP:/OutBound | tail -1 | awk '{print $9'})`
+sshpass -p PASSWORD sftp -oPort=33000 USERNAME@IP:/OutBound <<< $'get '$a''
+aws s3 cp /usr/local/S3/$a s3://s3bucketlink
+if [ $? -eq 0 ]
+then
+echo "Lattest File Successfully Uploaded from Sftp to S3"
+else
+echo Please check File not Uploaded successfully from Sftp to S3 $ip | nail -s "File not Uploaed successfully" mailid 
+fi
+
+=======================S3 TO SERVER====================
+
+#!/bin/bash
+ip=`/sbin/ifconfig | grep "inet"| head -n 1| cut -d: -f2 | awk {'print $2'}`
+cd /usr/local/S3
+a=`(aws s3 ls s3://s3link --recursive | sort | tail -n 1 | awk '{print $4}')`
+b=`(aws s3 cp s3://s3link/$a .)`
+sshpass -p PASSWRD sftp -oPort=33000 USERNAME@1IP:/InBound/Expense <<< $'put /usr/local/S3/'$a''
+if [ $? -eq 0 ]
+then
+echo "Lattest File Successfully Uploaded from  S3 to Sftp"
+else
+echo Please check File not Uploaded successfully from S3 to Sftp $ip | nail -s "File not Uploaed successfully" mailid
+fi
